@@ -29,8 +29,7 @@ public class MixinSearchFieldComponent {
 	private void onEscPress(int keyCode, char character, CallbackInfo ci) {
 		// 当代码执行 this.textField.setFocused(false) 时触发
 
-		IMEUtil.lastUserPreference = IMEUtil.getPhysicalOpenStatus();
-		IMEUtil.setIMEState(false);
+		IMEUtil.generalLoseFocus();
 	}
 
 	// 当组件执行 tick 时，如果发现自己不再被显示或失焦，确保状态回滚

@@ -12,7 +12,9 @@
     "MixinTextFieldElement",
     "MixinTextFieldWidget",
     "MixinFullScreen",
-    "MixinScreenSignEditor"
+    "MixinScreenSignEditor",
+    "render.MixinScreen",
+    "render.MixinHudComponent"
   ],
   "client": [
   ]

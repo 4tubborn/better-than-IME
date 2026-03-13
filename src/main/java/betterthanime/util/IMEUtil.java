@@ -64,7 +64,7 @@ public class IMEUtil {
 	}
 
 	// 新增：主动获取当前系统的物理输入法状态
-	public static boolean getPhysicalOpenStatus() {
+	public static boolean getPhysicalInputStatus() {
 		try {
 			HWND hwnd = User32.INSTANCE.GetActiveWindow();
 			if (hwnd == null) return false;
@@ -91,8 +91,12 @@ public class IMEUtil {
 	//保存输入法状态，禁用输入法
 	public static void generalLoseFocus(){
 
-		IMEUtil.lastUserPreference = IMEUtil.getPhysicalOpenStatus();
+		IMEUtil.lastUserPreference = IMEUtil.getPhysicalInputStatus();
 		System.out.println("[btime] stored pre: "+IMEUtil.lastUserPreference);
-		IMEUtil.setIMEState(false);
+		setIMEState(false);
+	}
+
+	public static void toggleInputStatus(){
+		setIMEState(true,!getPhysicalInputStatus());
 	}
 }

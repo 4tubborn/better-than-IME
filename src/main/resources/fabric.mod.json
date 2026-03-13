@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "better-than-ime",
+	"id": "betterthanime",
 	"version": "${version}",
 	"name": "Better Than IME",
-	"description": "This mod aims to help new BTA modders.",
+	"description": "Fix in-game IME conflicts.",
 	"authors": ["4tubborn"],
 	"license": "CC0-1.0",
 	"environment": "*",

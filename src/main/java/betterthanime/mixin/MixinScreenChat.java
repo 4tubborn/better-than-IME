@@ -55,7 +55,7 @@ public abstract class MixinScreenChat {
 		if (!isCurrentlySlashMode) {
 			// 我们假设用户离开前如果没输入斜杠，他当前手动切换的状态就是他想要的
 			// 但因为 Java 无法监听 Ctrl+Space，这里建议保留 lastUserPreference 的逻辑
-			IMEUtil.lastUserPreference = IMEUtil.getPhysicalOpenStatus();
+			IMEUtil.lastUserPreference = IMEUtil.getPhysicalInputStatus();
 		}
 		// 彻底退出，切回英文以防影响操作
 		IMEUtil.setIMEState(false);

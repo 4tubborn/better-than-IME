@@ -47,37 +47,28 @@ dependencies {
 	minecraft("::${libs.versions.bta.get()}")
 
 	runtimeOnly(libs.clientJar)
-	implementation(libs.loader)                         // 加载器由游戏提供，不要 include
-	// Halplibe 已按你的要求注释掉
-	// implementation(libs.halplibe)
-
+	implementation(libs.loader)
+	// If you do not need Halplibe you can comment out or delete this line.
+	implementation(libs.halplibe)
 	implementation(libs.modMenu)
-	include(libs.modMenu)                               // 必须 include，否则独立环境找不到
-
 	implementation(libs.legacyLwjgl)
-	include(libs.legacyLwjgl)                           // 必须 include
 
 	implementation(libs.slf4jApi)
-	include(libs.slf4jApi)                               // 如果你的代码直接使用了 slf4j
 	implementation(libs.guava)
-	include(libs.guava)                                  // 如果你的代码直接使用了 guava
 	implementation(libs.log4j.slf4j2.impl)
-	include(libs.log4j.slf4j2.impl)
 	implementation(libs.log4j.core)
-	include(libs.log4j.core)
 	implementation(libs.log4j.api)
-	include(libs.log4j.api)
 	implementation(libs.log4j.api12)
-	include(libs.log4j.api12)
 	implementation(libs.gson)
-	//include(libs.gson)                                   // 如果你的代码直接使用了 gson
 
 	implementation(libs.commonsLang3)
-	include(libs.commonsLang3)                           // 你原来已经 include 了，保留
-	implementation("net.java.dev.jna:jna:5.14.0")
-	include("net.java.dev.jna:jna:5.14.0")                // JNA 也需要 include
-	implementation("net.java.dev.jna:jna-platform:5.14.0")
-	include("net.java.dev.jna:jna-platform:5.14.0")
+	include(libs.commonsLang3)
+	// 3. JNA 依赖 (为你添加以支持 Mixin 代码)
+	val jnaVersion = "5.14.0"
+	implementation("net.java.dev.jna:jna:$jnaVersion")
+	implementation("net.java.dev.jna:jna-platform:$jnaVersion")
+	include("net.java.dev.jna:jna:$jnaVersion")
+	include("net.java.dev.jna:jna-platform:$jnaVersion")
 }
 java {
 	toolchain {
@@ -131,7 +122,7 @@ tasks {
 		val resourceMap = mapOf(
 			"version" to modVersion.get(),
 			"fabricloader" to libs.versions.loader.get(),
-			"halplibe" to libs.versions.halplibe.get(),
+			//"halplibe" to libs.versions.halplibe.get(),
 			"java" to libs.versions.java.get(),
 			"modmenu" to libs.versions.modMenu.get()
 		)
