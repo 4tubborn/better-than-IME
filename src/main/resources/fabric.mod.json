@@ -1,43 +1,23 @@
 {
 	"schemaVersion": 1,
-	"id": "examplemod",
+	"id": "better-than-ime",
 	"version": "${version}",
-	"name": "Example Mod",
+	"name": "Better Than IME",
 	"description": "This mod aims to help new BTA modders.",
-	"authors": [
-		"Turnip Labs"
-	],
-	"contact": {
-		"homepage": "",
-		"sources": ""
-	},
-	"icon": "icon.png",
+	"authors": ["4tubborn"],
 	"license": "CC0-1.0",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"turniplabs.examplemod.ExampleMod"
-		],
-		"beforeGameStart": [
-			"turniplabs.examplemod.ExampleMod"
-		],
-		"afterGameStart": [
-			"turniplabs.examplemod.ExampleMod"
-		],
-		"recipesReady": [
-			"turniplabs.examplemod.ExampleMod"
+			"betterthanime.BetterThanIME"
 		]
 	},
 	"mixins": [
-		"examplemod.mixins.json"
+		"better-than-ime.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=${fabricloader}",
-		"halplibe": ">=${halplibe}",
 		"minecraft": "*",
 		"java": ">=${java}"
-	},
-	"suggests": {
-		"modmenu": ">=${modmenu}"
 	}
 }
