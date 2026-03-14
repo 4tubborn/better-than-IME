@@ -1,2 +1,16 @@
 gui.betterthanime.ime_status.en=英
 gui.betterthanime.ime_status.zh=中
+
+options.betterthanime.title=Better Than IME
+options.betterthanime.category.general=通用
+options.betterthanime.enableCommandMode=命令模式
+
+options.betterthanime.storeMode=输入法状态存储行为
+options.betterthanime.storeMode.never=永不
+options.betterthanime.storeMode.always=总是
+options.betterthanime.storeMode.blacklist=黑名单
+options.betterthanime.category.blacklist=黑名单列表
+options.betterthanime.blacklistCommandMode=命令模式
+
+options.betterthanime.category.imeStatusIndicator=输入法指示器
+options.betterthanime.autoAdsorb=自动吸附

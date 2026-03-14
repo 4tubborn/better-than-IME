@@ -1,2 +1,16 @@
 gui.betterthanime.ime_status.en=EN
 gui.betterthanime.ime_status.zh=ZH
+
+options.betterthanime.title=Better Than IME
+options.betterthanime.category.general=General
+options.betterthanime.enableCommandMode=Command Mode
+
+options.betterthanime.storeMode=Input Method Memory Behavior
+options.betterthanime.storeMode.never=Never
+options.betterthanime.storeMode.always=Always
+options.betterthanime.storeMode.blacklist=Blacklist
+options.betterthanime.category.blacklist=Blacklist
+options.betterthanime.blacklistCommandMode=Command Mode
+
+options.betterthanime.category.imeStatusIndicator=IME Status Indicator
+options.betterthanime.autoAdsorb=Auto Adsorb

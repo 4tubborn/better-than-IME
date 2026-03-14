@@ -10,14 +10,22 @@
 	"entrypoints": {
 		"main": [
 			"betterthanime.BetterThanIME"
+		],
+		"modmenu": [
+			"betterthanime.modmenu.ModMenuImpl"
+		],
+		"afterClientStart": [
+			"betterthanime.BetterThanIMEClient"
 		]
 	},
 	"mixins": [
-		"better-than-ime.mixins.json"
+		"betterthanime.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=${fabricloader}",
+
 		"minecraft": "*",
 		"java": ">=${java}"
-	}
+	},
+	"icon": "icon.png"
 }

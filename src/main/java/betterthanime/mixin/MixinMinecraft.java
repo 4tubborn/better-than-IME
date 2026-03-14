@@ -13,8 +13,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinMinecraft {
 	@Shadow public Screen currentScreen;
 
+
 	@Inject(method = "displayScreen", at = @At("RETURN"))
 	private void onDisplayScreen(Screen screen, CallbackInfo ci) {
+
+
+
+		//System.out.println("[btime] cur_scr: "+this.currentScreen);
+		//System.out.println("[btime] enableIME: "+IMEUtil.enableIME);
+
 		// 如果 screen 为 null，说明回到了游戏画面，重置聚焦状态并同步关闭
 		if (screen == null) {
 			IMEUtil.setIMEState(false);
@@ -23,12 +30,15 @@ public class MixinMinecraft {
 
 	@Inject(method = "runTick", at = @At("HEAD"))
 	private void onTick(CallbackInfo ci) {
-		// 逻辑升级：
-		// 只要当前没有聚焦到任何输入框，就每一帧强制同步为关闭状态
-		// 这样无论是在主菜单、背包、还是走路，只要没点开输入框，输入法就弹不出来
-		if (!IMEUtil.enableIME) {
-			IMEUtil.sync(false); // 此时 sync 内部使用的是 enableIME (false)
-		}
+
+		// 如果已经在输入模式（enableIME 为 true），直接跳过强制关闭逻辑
+		//if (IMEUtil.syncLock) return;
+
+		IMEUtil.ensureSafeWindowMode();
+		if (IMEUtil.enableIME) return;
+
+		// 只有在确定没有输入框聚焦时，才执行物理同步关闭
+		IMEUtil.sync(false);
 	}
 	@Inject(method = "displayScreen", at = @At("HEAD"))
 	private void on(Screen screen, CallbackInfo ci) {

@@ -38,6 +38,8 @@ repositories {
 		patternLayout { artifact("v1/[organisation]/[revision]/[module].jar") }
 		metadataSources { artifact() }
 	}
+	//modmenu
+	maven( "https://jitpack.io/") { name = "JitPack" }
 }
 lwjgl {
 	version = libs.versions.lwjgl
@@ -51,7 +53,12 @@ dependencies {
 	// If you do not need Halplibe you can comment out or delete this line.
 	implementation(libs.halplibe)
 	implementation(libs.modMenu)
-	implementation(libs.legacyLwjgl)
+	//implementation(libs.legacyLwjgl)9
+	// --- 核心修复：强制提升编译时 LWJGL 版本 ---
+	// 这样编译器就能识别 GLFW.GLFW_IME_INPUT_MODE (0x00033001)
+	//val lwjglVer = "3.3.1" // 建议使用 3.3.1 或更高版本
+	//implementation("org.lwjgl:lwjgl-glfw:$lwjglVer")
+	//implementation("org.lwjgl:lwjgl:$lwjglVer")
 
 	implementation(libs.slf4jApi)
 	implementation(libs.guava)
@@ -69,6 +76,8 @@ dependencies {
 	implementation("net.java.dev.jna:jna-platform:$jnaVersion")
 	include("net.java.dev.jna:jna:$jnaVersion")
 	include("net.java.dev.jna:jna-platform:$jnaVersion")
+	//modmenu
+	implementation("com.github.Turnip-Labs:ModMenu:4.0.0")
 }
 java {
 	toolchain {
@@ -122,7 +131,7 @@ tasks {
 		val resourceMap = mapOf(
 			"version" to modVersion.get(),
 			"fabricloader" to libs.versions.loader.get(),
-			//"halplibe" to libs.versions.halplibe.get(),
+			"halplibe" to libs.versions.halplibe.get(),
 			"java" to libs.versions.java.get(),
 			"modmenu" to libs.versions.modMenu.get()
 		)

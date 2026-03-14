@@ -1,4 +1,4 @@
-package betterthanime.mixin;
+package betterthanime.mixin.options;
 
 import betterthanime.util.IMEUtil;
 import net.minecraft.client.gui.TextFieldElement;
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = SearchFieldComponent.class, remap = false)
-public class MixinSearchFieldComponent {
+public class MixinSearchFieldComponent{
 	@Shadow
 	private TextFieldElement textField;
 
@@ -33,7 +33,7 @@ public class MixinSearchFieldComponent {
 	}
 
 	// 当组件执行 tick 时，如果发现自己不再被显示或失焦，确保状态回滚
-	@Inject(method = "tick", at = @At("HEAD"))
+	/*@Inject(method = "tick", at = @At("HEAD"))
 	private void onTick(CallbackInfo ci) {
 		// 如果文本框原本是聚焦的，但现在因为某些逻辑变成了非聚焦
 		// 状态会自动在下一帧通过 IMEUtil.sync() 压制回去
@@ -41,5 +41,11 @@ public class MixinSearchFieldComponent {
 		if (IMEUtil.enableIME && !textField.isFocused) {
 			IMEUtil.generalLoseFocus();
 		}
-	}
+	}*/
+
+	/*@Inject(method = "onMouseRelease", at = @At("HEAD"))
+	private void loseFocus(int mouseButton, int x, int y, int width, int relativeMouseX, int relativeMouseY, CallbackInfo ci){
+		IMEUtil.generalLoseFocus();
+	}*/
+
 }

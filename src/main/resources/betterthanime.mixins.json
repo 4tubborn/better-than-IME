@@ -1,0 +1,26 @@
+{
+  "required": true,
+  "package": "betterthanime.mixin",
+  "compatibilityLevel": "JAVA_${java}",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+  ],
+  "client": [
+    "MixinFullScreen",
+    "MixinMinecraft",
+    "MixinScreen",
+    "MixinScreenChat",
+    "MixinScreenSignEditor",
+    "MixinTextFieldElement",
+    "MixinTextFieldWidget",
+    "accessors.OptionsPageAccessor",
+    "guidebook.MixinScreenGuidebook",
+    "interfaces.MixinGameSettings",
+    "options.MixinScreenOptions",
+    "options.MixinSearchFieldComponent",
+    "render.MixinHudComponent",
+    "render.MixinScreen"
+  ]
+}

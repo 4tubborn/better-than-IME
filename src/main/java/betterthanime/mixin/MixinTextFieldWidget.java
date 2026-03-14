@@ -14,9 +14,8 @@ public class MixinTextFieldWidget {
 	private boolean isFocused;
 	@Shadow private boolean isEnabled;
 
-	@Inject(method = "setFocused", at = @At("RETURN"))
+	@Inject(method = "setFocused", at = @At("TAIL"))
 	private void onSetFocused(boolean focused, CallbackInfo ci) {
-		System.out.println("聚焦: " + focused);
 		// 只有当文本框被启用且聚焦时，才开启输入法
 		if (focused && this.isEnabled) {
 			IMEUtil.generalGetFocus();

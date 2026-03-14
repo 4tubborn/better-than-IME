@@ -1,13 +1,15 @@
 package betterthanime.mixin.render;
 
 import betterthanime.BetterThanIME;
-import betterthanime.client.gui.IMEStatusComponent;
+import betterthanime.gui.IMECompositionHud;
+import betterthanime.gui.IMEStatusComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Screen;
 import net.minecraft.client.gui.hud.component.HudComponents;
 import net.minecraft.core.lang.I18n;
 import net.minecraft.core.sound.SoundCategory;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -15,13 +17,23 @@ import betterthanime.util.IMEUtil;
 
 @Mixin(value = Screen.class, remap = false)
 public abstract class MixinScreen {
+	@Unique
+	private final IMECompositionHud compositionHud = new IMECompositionHud();
+
 	@Inject(method = "render", at = @At("TAIL"))
 	private void onRender(int mx, int my, float pt, CallbackInfo ci) {
 		Minecraft mc = Minecraft.getMinecraft();
+
+		compositionHud.render(mc);
+
+		if (mc.currentScreen instanceof net.minecraft.client.gui.chat.ScreenChat) {
+			return;
+		}
+
 		IMEStatusComponent comp = (IMEStatusComponent) HudComponents.INSTANCE.getComponent("betterthanime.ime_status");
 
 		if (comp != null) {
-			net.minecraft.client.gui.Screen screen = (net.minecraft.client.gui.Screen)(Object)this;
+			Screen screen = (Screen) (Object) this;
 
 			// 判断当前是否处于 HUD 编辑器页面
 			boolean inHudDesigner = screen instanceof net.minecraft.client.gui.ScreenHudDesigner;
@@ -54,7 +66,7 @@ public abstract class MixinScreen {
 
 				// 同样使用 I18n 获取翻译
 				I18n i18n = I18n.getInstance();
-				String key = IMEUtil.getPhysicalInputStatus() ? "gui."+BetterThanIME.MOD_ID+".ime_status.zh" : "gui."+BetterThanIME.MOD_ID+".gui.ime_status.en";
+				String key = IMEUtil.getPhysicalInputStatus() ? "gui.betterthanime.ime_status.zh" : "gui.betterthanime.ime_status.en";
 				IMEStatusComponent.Button.displayString = i18n.translateKey(key);
 
 				Minecraft.getMinecraft().sndManager.playSound("random.click", SoundCategory.GUI_SOUNDS, 1.0F, 1.0F);
