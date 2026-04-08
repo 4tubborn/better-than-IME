@@ -1,4 +1,4 @@
-package betterthanime.mixin.options;
+package betterthanime.mixin;
 
 import betterthanime.util.IMEUtil;
 import net.minecraft.client.gui.TextFieldElement;

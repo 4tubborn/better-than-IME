@@ -18,8 +18,8 @@
     "accessors.OptionsPageAccessor",
     "guidebook.MixinScreenGuidebook",
     "interfaces.MixinGameSettings",
-    "options.MixinScreenOptions",
-    "options.MixinSearchFieldComponent",
+    "MixinScreenOptions",
+    "MixinSearchFieldComponent",
     "render.MixinHudComponent",
     "render.MixinScreen"
   ]

@@ -1,4 +1,4 @@
-package betterthanime.mixin.options;
+package betterthanime.mixin;
 
 import net.minecraft.client.gui.options.ScreenOptions;
 import org.spongepowered.asm.mixin.Mixin;

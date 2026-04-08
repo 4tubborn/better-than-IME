@@ -1,186 +1,99 @@
 package betterthanime.util;
 
-import betterthanime.gui.settings.EStoreMode;
-import betterthanime.gui.settings.IOptions;
-import com.sun.jna.Function;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HWND;
-import com.sun.jna.Native;
-//import com.sun.jna.platform.win32.WinInterfaceAddress.HIMC; // 确保是这个类型
 import com.sun.jna.win32.StdCallLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.TextFieldElement;
-import org.lwjgl.Sys;
-import org.spongepowered.asm.mixin.Unique;
+import betterthanime.gui.settings.EStoreMode;
+import betterthanime.gui.settings.IOptions;
 
 public class IMEUtil {
 	public static boolean enableIME = false;
-	// 记录上一次同步到系统的真实状态
-	//记忆变量：记录用户上一次在非命令模式下的输入习惯
 	public static boolean lastUserPreference = true;
-
 	public static TextFieldElement currentFocusedField = null;
 
-	// 在 IMEUtil.java 中添加
-	public static void ensureSafeWindowMode() {
-		Minecraft mc = Minecraft.getMinecraft();
-		// 1. 检查物理状态：直接问 GLFW 窗口现在是不是全屏
-		long handle = mc.gameWindow.getHandle();
-		boolean isPhysicallyFullscreen = org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(handle) != 0L;
+	// --- JNA 接口定义部分 ---
 
-		if (isPhysicallyFullscreen || mc.gameSettings.fullscreen.value) {
-			System.out.println("[btime]: 操你妈傻逼视窗系统，别给老子用全屏！");
+	public interface Imm32 extends StdCallLibrary {
+		Imm32 INSTANCE = Native.load("imm32", Imm32.class);
 
-			// 2. 关键：调用 BTA 的原生切换逻辑
-			// 注意：有些 BTA 版本在调用 toggleFullscreen 时会自动翻转配置值
-			mc.gameWindow.toggleFullscreen();
+		// 获取和释放上下文
+		Pointer ImmGetContext(HWND hWnd);
+		boolean ImmReleaseContext(HWND hWnd, Pointer hIMC);
 
-			// 3. 强制确保配置值同步为 false
-			mc.gameSettings.fullscreen.value = false;
+		// 状态获取与设置
+		boolean ImmGetOpenStatus(Pointer hIMC);
+		boolean ImmSetOpenStatus(Pointer hIMC, boolean bOpen);
 
-			// 4. 强制刷新窗口，防止画面卡死在最后一帧全屏
-			org.lwjgl.glfw.GLFW.glfwPollEvents();
+		// 核心优化：上下文关联与创建 (参考 IMBlocker)
+		Pointer ImmAssociateContext(HWND hWnd, Pointer hIMC);
+		Pointer ImmCreateContext();
+		boolean ImmDestroyContext(Pointer hIMC);
+
+		// 拼音字符串获取
+		int ImmGetCompositionStringW(Pointer hIMC, int dwIndex, byte[] lpBuf, int dwBufLen);
+	}
+
+	// --- 逻辑实现部分 ---
+
+	private static boolean isPowerOff = false; // 状态哨兵
+
+	public static void sync(boolean targetState) {
+		try {
+			// 1. 始终使用 GetForegroundWindow 确保句柄准确
+			HWND hwnd = User32.INSTANCE.GetForegroundWindow();
+			if (hwnd == null) return;
+
+			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
+			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
+				// 2. 移除 "if (currentSystemState != targetState)" 的判断
+				// 每一帧都强制重设状态，不给输入法“狡猾”切换的机会
+				Imm32.INSTANCE.ImmSetOpenStatus(hIMC, targetState);
+
+				// 3. 释放
+				Imm32.INSTANCE.ImmReleaseContext(hwnd, hIMC);
+			}
+		} catch (Throwable t) {
+			t.printStackTrace();
 		}
 	}
 
-
-	//是否启用中文输入法（同时更新enableIME，openStatus表示是否启用中文输入法）
 	public static void setIMEState(boolean enable, boolean openStatus) {
 		enableIME = enable;
-		// 如果 enable 为 false，目标一定是 false
-		// 如果 enable 为 true，目标则是 openStatus
-		boolean targetState = enable && openStatus;
-		//if(enable)IMEControl.setOpenStatus(openStatus);
-		sync(targetState);
+		sync(enable && openStatus);
 	}
 
-	/**
-	 * 缺省参数方法：当不传入 openStatus 时，默认使用 lastUserPreference
-	 */
 	public static void setIMEState(boolean enable) {
-		// 调用上面的方法，并将 openStatus 缺省为记录的用户习惯
 		setIMEState(enable, lastUserPreference);
 	}
 
-	//同步是否启用输入法
-	public static void sync(boolean targetState) {
-		try {
-			// 获取当前窗口句柄
-			HWND hwnd = User32.INSTANCE.GetActiveWindow();
-			if (hwnd == null) {
-				// 调试输出，看看是不是这里断了
-				//System.out.println("[btime] Sync failed: HWND is null");
-				return;
-			};
-
-			// 获取输入法上下文
-			Function getContextFunc = Function.getFunction("imm32", "ImmGetContext");
-			Pointer hIMC = (Pointer) getContextFunc.invoke(Pointer.class, new Object[]{hwnd});
-
-			if (hIMC != null && hIMC != Pointer.NULL) {
-				// 关键点：获取当前输入法物理开启状态
-				Function getOpenStatusFunc = Function.getFunction("imm32", "ImmGetOpenStatus");
-				boolean currentSystemState = (boolean) getOpenStatusFunc.invoke(boolean.class, new Object[]{hIMC});
-
-				// 只有在 状态不一致 时才动作
-				if (currentSystemState != targetState) {
-					// 如果是全屏模式，调用 ImmSetOpenStatus 极易导致黑屏
-					// 这里可以加入判断逻辑 (伪代码：if(mc.isFullscreen) return;)
-
-					Function setOpenStatusFunc = Function.getFunction("imm32", "ImmSetOpenStatus");
-					setOpenStatusFunc.invoke(boolean.class, new Object[]{hIMC, targetState});
-				}
-
-				// 释放上下文
-				Function releaseContextFunc = Function.getFunction("imm32", "ImmReleaseContext");
-				releaseContextFunc.invoke(boolean.class, new Object[]{hwnd, hIMC});
-			}
-		} catch (Throwable ignored) {
-			ignored.printStackTrace(); // 打印错误，看是否是 JNA 调用异常
-		}
-	}
-
-	// 新增：主动获取当前系统的物理输入法状态
 	public static boolean getPhysicalInputStatus() {
 		try {
 			HWND hwnd = User32.INSTANCE.GetActiveWindow();
 			if (hwnd == null) return false;
-			Function getContextFunc = Function.getFunction("imm32", "ImmGetContext");
-			Pointer hIMC = (Pointer) getContextFunc.invoke(Pointer.class, new Object[]{hwnd});
+			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
 
-			if (hIMC != null && hIMC != Pointer.NULL) {
-				Function getOpenStatusFunc = Function.getFunction("imm32", "ImmGetOpenStatus");
-				// 返回值是非0表示开启，0表示关闭
-				int result = (int) getOpenStatusFunc.invoke(int.class, new Object[]{hIMC});
-
-				Function releaseContextFunc = Function.getFunction("imm32", "ImmReleaseContext");
-				releaseContextFunc.invoke(boolean.class, new Object[]{hwnd, hIMC});
-
-				return result != 0;
+			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
+				boolean isOpen = Imm32.INSTANCE.ImmGetOpenStatus(hIMC);
+				Imm32.INSTANCE.ImmReleaseContext(hwnd, hIMC);
+				return isOpen;
 			}
 		} catch (Throwable ignored) {}
 		return false;
 	}
 
-	@Unique
-	private static EStoreMode StoreMode() {
-		Minecraft mc = Minecraft.getMinecraft();
-		if (mc.gameSettings instanceof IOptions) {
-			return ((IOptions) mc.gameSettings).btime$StoreMode().value;
-		}
-		return null;
-	}
-
-	public static void generalGetFocus(){
-		IMEUtil.setIMEState(true, StoreMode() == EStoreMode.NEVER || IMEUtil.lastUserPreference);
-	}
-	//保存输入法状态，禁用输入法
-	public static void generalLoseFocus(){
-		if(StoreMode() != EStoreMode.NEVER) {
-			IMEUtil.lastUserPreference = IMEUtil.getPhysicalInputStatus();
-			System.out.println("[btime] stored pre: "+IMEUtil.lastUserPreference);
-		}
-		setIMEState(false);
-	}
-
-	public static void toggleInputStatus(){
-		setIMEState(true,!getPhysicalInputStatus());
-	}
-
-	//private static final Function immGetContext = Function.getFunction("imm32", "ImmGetContext");
-	//private static final Function immReleaseContext = Function.getFunction("imm32", "ImmReleaseContext");
-	//private static final Function immGetCompStr = Function.getFunction("imm32", "ImmGetCompositionStringW");
-
-	public interface Imm32 extends StdCallLibrary {
-		Imm32 INSTANCE = Native.load("imm32", Imm32.class);
-		Pointer ImmGetContext(HWND hWnd);
-		boolean ImmReleaseContext(HWND hWnd, Pointer hIMC);
-		int ImmGetCompositionStringW(Pointer hIMC, int dwIndex, byte[] lpBuf, int dwBufLen);
-	}
-
-	// 定义一个临时的 User32 接口来获取焦点窗口
-	public interface SimpleUser32 extends StdCallLibrary {
-		SimpleUser32 INSTANCE = Native.load("user32", SimpleUser32.class);
-		HWND GetFocus();
-		HWND GetForegroundWindow();
-	}
-
 	public static String getCompositionString() {
 		try {
-			// 1. 先尝试获取 Minecraft 的 GLFW 窗口句柄
 			long handleVal = Minecraft.getMinecraft().gameWindow.getHandle();
 			HWND hwnd = new HWND(new Pointer(handleVal));
-
-			// 2. 获取 IME 上下文
 			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
 
-			// 如果 GLFW 句柄拿不到，尝试当前系统的焦点窗口
+			// 兜底方案：如果 GLFW 句柄失效，尝试获取当前前台窗口
 			if (hIMC == null || Pointer.nativeValue(hIMC) == 0) {
-				hwnd = SimpleUser32.INSTANCE.GetFocus();
-				if (hwnd == null || Pointer.nativeValue(hwnd.getPointer()) == 0) {
-					hwnd = SimpleUser32.INSTANCE.GetForegroundWindow();
-				}
+				hwnd = User32.INSTANCE.GetForegroundWindow();
 				hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
 			}
 
@@ -188,23 +101,51 @@ public class IMEUtil {
 				try {
 					// GCS_COMPSTR = 0x0008
 					int size = Imm32.INSTANCE.ImmGetCompositionStringW(hIMC, 0x0008, null, 0);
-
 					if (size > 0) {
 						byte[] buffer = new byte[size];
 						Imm32.INSTANCE.ImmGetCompositionStringW(hIMC, 0x0008, buffer, size);
-
-						// 打印调试信息，确认是否抓到数据
-						//System.out.println("[btime] Comp Size: " + size);
-
 						return new String(buffer, java.nio.charset.StandardCharsets.UTF_16LE).trim();
 					}
 				} finally {
 					Imm32.INSTANCE.ImmReleaseContext(hwnd, hIMC);
 				}
 			}
-		} catch (Throwable t) {
-			// 捕获所有错误，防止游戏因为 IME 逻辑崩溃
-		}
+		} catch (Throwable ignored) {}
 		return "";
+	}
+
+	public static void generalGetFocus() {
+		setIMEState(true, getStoreMode() == EStoreMode.NEVER || lastUserPreference);
+	}
+
+	public static void generalLoseFocus() {
+		if (getStoreMode() != EStoreMode.NEVER) {
+			lastUserPreference = getPhysicalInputStatus();
+		}
+		setIMEState(false);
+	}
+
+	public static void toggleInputStatus() {
+		setIMEState(true, !getPhysicalInputStatus());
+	}
+
+	private static EStoreMode getStoreMode() {
+		Minecraft mc = Minecraft.getMinecraft();
+		if (mc.gameSettings instanceof IOptions) {
+			return ((IOptions) mc.gameSettings).btime$StoreMode().value;
+		}
+		return EStoreMode.NEVER;
+	}
+
+	public static void ensureSafeWindowMode() {
+		Minecraft mc = Minecraft.getMinecraft();
+		long handle = mc.gameWindow.getHandle();
+		boolean isPhysicallyFullscreen = org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(handle) != 0L;
+
+		if (isPhysicallyFullscreen || mc.gameSettings.fullscreen.value) {
+			mc.gameWindow.toggleFullscreen();
+			mc.gameSettings.fullscreen.value = false;
+			org.lwjgl.glfw.GLFW.glfwPollEvents();
+		}
 	}
 }

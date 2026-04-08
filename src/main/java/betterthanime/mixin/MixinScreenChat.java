@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = ScreenChat.class, remap = false)
@@ -29,6 +30,58 @@ public abstract class MixinScreenChat extends Screen {
 	@Unique
 	private boolean isCurrentlySlashMode = false;
 
+	// 在 MixinScreenChat.java 中
+
+	@Unique
+	private boolean isRenderingPinyin = false;
+
+	@Inject(method = "render", at = @At("HEAD"))
+	private void preRenderCheck(int mx, int my, float partialTick, CallbackInfo ci) {
+		this.isRenderingPinyin = false;
+		String pinyin = IMEUtil.getCompositionString();
+		// 只有在拼音不为空时才激活拦截逻辑
+		if (pinyin != null && !pinyin.isEmpty()) {
+			this.isRenderingPinyin = true;
+		}
+	}
+
+	@Redirect(
+		method = "render",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/chat/ScreenChat;drawString(Lnet/minecraft/client/render/Font;Ljava/lang/String;III)V")
+	)
+	private void redirectChatDrawString(ScreenChat instance, Font font, String text, int x, int y, int color) {
+		// 如果我们要画拼音，就拦住原版那个 "_" 的绘制
+		if (this.isRenderingPinyin && "_".equals(text)) {
+			return;
+		}
+		// 其他内容（比如聊天消息正文）正常绘制
+		instance.drawString(font, text, x, y, color);
+	}
+
+	// 1. 修改注入点：选在第一次 drawString（画 message）之后
+	@Inject(
+		method = "render",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/chat/ScreenChat;drawString(Lnet/minecraft/client/render/Font;Ljava/lang/String;III)V", ordinal = 0, shift = At.Shift.AFTER)
+	)
+	private void injectPinyinIntoChat(int mx, int my, float partialTick, CallbackInfo ci) {
+		if (!this.isRenderingPinyin) return;
+
+		String pinyin = IMEUtil.getCompositionString();
+		int x = 18 + this.font.getStringWidth(this.message);
+		int y = this.height - 12;
+
+		// --- 这里是拼音，每一帧都会执行，不再闪烁 ---
+		int compColor = 0xFF55FF55;
+		this.drawString(this.font, pinyin, x, y, compColor);
+		this.drawRect(x, y + 9, x + this.font.getStringWidth(pinyin), y + 10, compColor);
+
+		// --- 这里是你的“虚拟光标”，手动控制它闪烁 ---
+		if (this.updateCounter / 6 % 2 == 0) {
+			int cursorX = x + this.font.getStringWidth(pinyin);
+			this.drawString(this.font, "_", cursorX, y, 14737632);
+		}
+	}
+
 
 	@Inject(method = "render", at = @At("HEAD"), cancellable = true)
 	private void renderIMEPreview(int mx, int my, float partialTick, CallbackInfo ci) {
@@ -41,7 +94,7 @@ public abstract class MixinScreenChat extends Screen {
 		}
 
 		//Screen screen = (Screen)(Object)this;
-		int w = this.width;
+		/*int w = this.width;
 		int h = this.height;
 
 		String pinyin = IMEUtil.getCompositionString();
@@ -67,7 +120,7 @@ public abstract class MixinScreenChat extends Screen {
 
 		if (this.updateCounter / 6 % 2 == 0) {
 			this.drawString(this.font, "_", x, y, 14737632);
-		}
+		}*/
 	}
 
 	/**

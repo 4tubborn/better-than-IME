@@ -46,6 +46,9 @@ public class MixinTextFieldElement {
 	@Unique
 	private static final Minecraft mc = Minecraft.getMinecraft();
 
+	@Unique
+	private boolean isRenderingPinyin = false;
+
 	@Inject(method = "setFocused", at = @At("HEAD"))
 	private void onSetFocused(boolean focused, CallbackInfo ci) {
 		/*if (IMEUtil.syncLock) {
@@ -59,6 +62,8 @@ public class MixinTextFieldElement {
 				IMEUtil.generalGetFocus();
 
 			} else {
+				//不渲染了
+				this.isRenderingPinyin = false;
 				IMEUtil.generalLoseFocus();
 			}
 			System.out.println("[btime] Text Input: " + focused);
@@ -66,10 +71,9 @@ public class MixinTextFieldElement {
 		}
 	}
 
-
 	@Inject(method = "drawTextBox", at = @At("HEAD"), cancellable = true)
 	private void onDraw(CallbackInfo ci) {
-		System.out.println("[btime] OnRender!!!!!");
+		//System.out.println("[btime] OnRender!!!!!");
 
 		// 如果当前输入框被选中（正在打字）
 		if (this.isFocused && IMEStatusComponent.INSTANCE != null) {
@@ -77,28 +81,48 @@ public class MixinTextFieldElement {
 			IMEStatusComponent.INSTANCE.setStickerPosition(this.xPosition, this.yPosition - IMEStatusComponent.INSTANCE.getYSize(mc) - IMEStatusComponent.padding);
 		}
 		if (this.isFocused){
-			System.out.println("[btime] nothing");
+			//System.out.println("[btime] nothing");
 		}
-		System.out.println("[btime] nothing");
+		//System.out.println("[btime] nothing");
 	}
 
-	/*@Redirect(method = "drawTextBox", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/TextFieldElement;drawTextBox()V"))
-	private void redirectDraw(TextFieldElement instance) {
-		// 手动调用原版，或者完全自己实现逻辑
-		// 这样能避开对 drawTextBox 方法体本身的注入
-	}*/
+	@Redirect(
+		method = "drawTextBox",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/TextFieldElement;drawString(Lnet/minecraft/client/render/Font;Ljava/lang/String;III)V")
+	)
+	private void redirectDrawString(TextFieldElement instance, Font font, String text, int x, int y, int color) {
+		// 核心修复逻辑：
+		// 只有当 [正在渲染拼音预览] 且 [当前准备画的是光标下划线] 时，才拦截
+		if (this.isRenderingPinyin && "_".equals(text)) {
+			return; // 跳过原版光标绘制
+		}
+
+		// 如果是正常的文字内容（text 不是 "_"），则必须正常调用绘制
+		instance.drawString(font, text, x, y, color);
+	}
 
 	/**
 	 * 在 drawTextBox 渲染结束后注入，绘制拼音预览
 	 */
-	@Inject(method = "drawTextBox", at = @At("HEAD"))
+	// 找一个方法内部靠后的调用点，比如 drawString (画光标的那一次)
+	@Inject(
+		method = "drawTextBox",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/TextFieldElement;drawString(Lnet/minecraft/client/render/Font;Ljava/lang/String;III)V", ordinal = 1)
+	)
 	private void injectPinyinPreview(CallbackInfo ci) {
+
+		this.isRenderingPinyin = false;
+
 		if (!this.isFocused || !this.isEnabled || !IMEUtil.enableIME) return;
+		if (this.yPosition < 0 || this.yPosition > mc.resolution.getScaledHeightScreenCoords()) return;
+
+
 
 		String pinyin = IMEUtil.getCompositionString();
 		if (pinyin == null || pinyin.isEmpty()) return;
 		//会直接崩溃
 		//ci.cancel();
+		this.isRenderingPinyin = true;
 
 		// --- 1. 模拟源码的截取逻辑，获取当前屏幕上显示的文本内容 ---
 		int cursor = this.editor.getCursor();
