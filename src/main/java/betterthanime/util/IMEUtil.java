@@ -1,60 +1,74 @@
 package betterthanime.util;
 
-import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinDef.HWND;
-import com.sun.jna.win32.StdCallLibrary;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.TextFieldElement;
 import betterthanime.gui.settings.EStoreMode;
 import betterthanime.gui.settings.IOptions;
+
+import net.minecraft.core.enums.EnumOS;
+import org.lwjgl.glfw.GLFWNativeWin32;
+import org.spongepowered.asm.mixin.Unique;
 
 public class IMEUtil {
 	public static boolean enableIME = false;
 	public static boolean lastUserPreference = true;
-	public static TextFieldElement currentFocusedField = null;
 
-	// --- JNA 接口定义部分 ---
-
-	public interface Imm32 extends StdCallLibrary {
-		Imm32 INSTANCE = Native.load("imm32", Imm32.class);
-
-		// 获取和释放上下文
-		Pointer ImmGetContext(HWND hWnd);
-		boolean ImmReleaseContext(HWND hWnd, Pointer hIMC);
-
-		// 状态获取与设置
-		boolean ImmGetOpenStatus(Pointer hIMC);
-		boolean ImmSetOpenStatus(Pointer hIMC, boolean bOpen);
-
-		// 核心优化：上下文关联与创建 (参考 IMBlocker)
-		Pointer ImmAssociateContext(HWND hWnd, Pointer hIMC);
-		Pointer ImmCreateContext();
-		boolean ImmDestroyContext(Pointer hIMC);
-
-		// 拼音字符串获取
-		int ImmGetCompositionStringW(Pointer hIMC, int dwIndex, byte[] lpBuf, int dwBufLen);
-	}
+	private static HWND mcHwnd = null;
 
 	// --- 逻辑实现部分 ---
 
-	private static boolean isPowerOff = false; // 状态哨兵
+	public static void initialize(){
+		if(Minecraft.getOs() != EnumOS.windows){
+			// 抛出运行时异常，强制停止加载流程
+			throw new RuntimeException("\n\n[BetterThanIME] This mod only supports Windows OS!\n" +
+				"Reason: The mod relies on Windows-specific IMM32 APIs.\n" +
+				"Current OS: " + Minecraft.getOs().name() + "\n");
+		}
+
+	}
+
+	public static void clientInitialize(){
+		// 1. 获取 GLFW 原始句柄
+		long glfwHandle = Minecraft.getMinecraft().gameWindow.getHandle();
+
+		// 2. 关键步骤：调用 LWJGL 提供的原生方法，把 GLFW 指针转成真正的 Win32 HWND
+		long hwndVal = GLFWNativeWin32.glfwGetWin32Window(glfwHandle);
+
+		// 3. 封装并缓存
+		mcHwnd = new HWND(new Pointer(hwndVal));
+
+		System.out.println("[btime] 真正的 Win32 句柄已锁定: " + mcHwnd);
+	}
+
 
 	public static void sync(boolean targetState) {
 		try {
-			// 1. 始终使用 GetForegroundWindow 确保句柄准确
-			HWND hwnd = User32.INSTANCE.GetForegroundWindow();
-			if (hwnd == null) return;
+			// 1. 直接用缓存的句柄，不再 new，也不再调用 GetForegroundWindow
+			if (mcHwnd == null) {
+				Minecraft mc = Minecraft.getMinecraft();
+				if (mc != null && mc.gameWindow != null) {
+					// 如果此时窗口已经创建了，就地初始化
+					clientInitialize();
+				} else {
+					// 如果窗口确实还没准备好，静默返回，不要刷屏输出错误
+					System.out.println("[btime] 没有句柄！！！！！！！！！！！！！！！！");
+					return;
+				}
+			}
 
-			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
+			//System.out.println("[btime] 获取到了句柄："+mcHwnd);
+
+			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(mcHwnd);
 			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
-				// 2. 移除 "if (currentSystemState != targetState)" 的判断
-				// 每一帧都强制重设状态，不给输入法“狡猾”切换的机会
-				Imm32.INSTANCE.ImmSetOpenStatus(hIMC, targetState);
-
-				// 3. 释放
-				Imm32.INSTANCE.ImmReleaseContext(hwnd, hIMC);
+				// 2. 脏检查：只有当系统当前状态和我们要的状态不一样时，才去改它
+				// 这样连 ImmSetOpenStatus 这个系统调用都能省掉 99%
+				if (Imm32.INSTANCE.ImmGetOpenStatus(hIMC) != targetState) {
+					Imm32.INSTANCE.ImmSetOpenStatus(hIMC, targetState);
+				}
+				Imm32.INSTANCE.ImmReleaseContext(mcHwnd, hIMC);
 			}
 		} catch (Throwable t) {
 			t.printStackTrace();
@@ -71,14 +85,13 @@ public class IMEUtil {
 	}
 
 	public static boolean getPhysicalInputStatus() {
-		try {
-			HWND hwnd = User32.INSTANCE.GetActiveWindow();
-			if (hwnd == null) return false;
-			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
+		if (mcHwnd == null) return false;
 
+		try {
+			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(mcHwnd);
 			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
 				boolean isOpen = Imm32.INSTANCE.ImmGetOpenStatus(hIMC);
-				Imm32.INSTANCE.ImmReleaseContext(hwnd, hIMC);
+				Imm32.INSTANCE.ImmReleaseContext(mcHwnd, hIMC);
 				return isOpen;
 			}
 		} catch (Throwable ignored) {}
@@ -86,17 +99,11 @@ public class IMEUtil {
 	}
 
 	public static String getCompositionString() {
+		// 如果 mcHwnd 还没初始化，或者不是 Windows 环境，直接滚粗
+		if (mcHwnd == null) return "";
+
 		try {
-			long handleVal = Minecraft.getMinecraft().gameWindow.getHandle();
-			HWND hwnd = new HWND(new Pointer(handleVal));
-			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
-
-			// 兜底方案：如果 GLFW 句柄失效，尝试获取当前前台窗口
-			if (hIMC == null || Pointer.nativeValue(hIMC) == 0) {
-				hwnd = User32.INSTANCE.GetForegroundWindow();
-				hIMC = Imm32.INSTANCE.ImmGetContext(hwnd);
-			}
-
+			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(mcHwnd);
 			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
 				try {
 					// GCS_COMPSTR = 0x0008
@@ -107,7 +114,8 @@ public class IMEUtil {
 						return new String(buffer, java.nio.charset.StandardCharsets.UTF_16LE).trim();
 					}
 				} finally {
-					Imm32.INSTANCE.ImmReleaseContext(hwnd, hIMC);
+					// 必须保证 Context 被释放
+					Imm32.INSTANCE.ImmReleaseContext(mcHwnd, hIMC);
 				}
 			}
 		} catch (Throwable ignored) {}
@@ -138,7 +146,7 @@ public class IMEUtil {
 	}
 
 	public static void ensureSafeWindowMode() {
-		Minecraft mc = Minecraft.getMinecraft();
+		/*Minecraft mc = Minecraft.getMinecraft();
 		long handle = mc.gameWindow.getHandle();
 		boolean isPhysicallyFullscreen = org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(handle) != 0L;
 
@@ -146,6 +154,26 @@ public class IMEUtil {
 			mc.gameWindow.toggleFullscreen();
 			mc.gameSettings.fullscreen.value = false;
 			org.lwjgl.glfw.GLFW.glfwPollEvents();
-		}
+		}*/
+	}
+
+	public static void updateInputCandidatePos(int x, int y) {
+		if (mcHwnd == null) return;
+
+		try {
+			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(mcHwnd);
+			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
+				Minecraft mc = Minecraft.getMinecraft();
+				double scale = mc.resolution.getScale();
+
+				Imm32.COMPOSITIONFORM form = new Imm32.COMPOSITIONFORM();
+				form.dwStyle = 0x0002; // CFS_POINT
+				form.ptCurrentPos.x = (int) (x * scale);
+				form.ptCurrentPos.y = (int) (y * scale);
+
+				Imm32.INSTANCE.ImmSetCompositionWindow(hIMC, form);
+				Imm32.INSTANCE.ImmReleaseContext(mcHwnd, hIMC);
+			}
+		} catch (Throwable ignored) {}
 	}
 }

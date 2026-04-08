@@ -1,6 +1,5 @@
 package betterthanime.mixin.render;
 
-import betterthanime.BetterThanIME;
 import betterthanime.gui.IMECompositionHud;
 import betterthanime.gui.IMEStatusComponent;
 import net.minecraft.client.Minecraft;
@@ -47,6 +46,7 @@ public abstract class MixinScreen {
 			comp.updateButtonStatus(mc, screen.width, screen.height);
 
 			if (IMEStatusComponent.Button.visible) {
+				//IMEStatusComponent.Button.zLevel = 0;
 				IMEStatusComponent.Button.drawButton(mc, mx, my);
 			}
 		}

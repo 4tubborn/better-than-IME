@@ -80,6 +80,8 @@ public abstract class MixinScreenChat extends Screen {
 			int cursorX = x + this.font.getStringWidth(pinyin);
 			this.drawString(this.font, "_", cursorX, y, 14737632);
 		}
+
+		IMEUtil.updateInputCandidatePos(x,y);
 	}
 
 
@@ -92,35 +94,6 @@ public abstract class MixinScreenChat extends Screen {
 			//compUI.updateButtonStatus(this.mc, this.width, this.height);
 			IMEStatusComponent.Button.drawButton(this.mc, mx, my);
 		}
-
-		//Screen screen = (Screen)(Object)this;
-		/*int w = this.width;
-		int h = this.height;
-
-		String pinyin = IMEUtil.getCompositionString();
-		if (pinyin == null || pinyin.isEmpty()) return;
-
-		ci.cancel();
-
-		// 绘制逻辑中全部改用 w 和 h
-		this.drawRect(2, h - 14, 14, h - 2, Integer.MIN_VALUE);
-		this.drawStringCentered(this.font, "☺", 8, h - 12, 14737632);
-		this.drawRect(16, h - 14, w - 2, h - 2, Integer.MIN_VALUE);
-
-		int x = 18;
-		int y = h - 12;
-
-		this.drawString(this.font, this.message, x, y, 14737632);
-		x += this.font.getStringWidth(this.message);
-
-		int compColor = 0xFF55FF55;
-		this.drawString(this.font, pinyin, x, y, compColor);
-		this.drawRect(x, y + 9, x + this.font.getStringWidth(pinyin), y + 10, compColor);
-		x += this.font.getStringWidth(pinyin);
-
-		if (this.updateCounter / 6 % 2 == 0) {
-			this.drawString(this.font, "_", x, y, 14737632);
-		}*/
 	}
 
 	/**

@@ -34,7 +34,7 @@ public class MixinMinecraft {
 		// 如果已经在输入模式（enableIME 为 true），直接跳过强制关闭逻辑
 		//if (IMEUtil.syncLock) return;
 
-		IMEUtil.ensureSafeWindowMode();
+		//IMEUtil.ensureSafeWindowMode();
 		if (IMEUtil.enableIME) return;
 
 		// 只有在确定没有输入框聚焦时，才执行物理同步关闭

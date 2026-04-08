@@ -3,11 +3,9 @@ package betterthanime.mixin;
 import betterthanime.gui.IMEStatusComponent;
 import betterthanime.util.IMEUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.TextFieldElement;
 import net.minecraft.client.gui.text.TextFieldEditor;
 import net.minecraft.client.render.Font;
-import org.lwjgl.Sys;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -166,6 +164,13 @@ public class MixinTextFieldElement {
 			pinyinY + 10,
 			compColor
 		);
+		if ((this.cursorCounter / 6) % 2 == 0) {
+			// 画那个会闪烁的虚拟光标 "_"
+			// 颜色 14737632 是原版常用的灰白色 (0xE0E0E0)
+			this.font.drawString("_", pinyinX + this.font.getStringWidth(pinyin), pinyinY, 14737632);
+		}
+
+		IMEUtil.updateInputCandidatePos(pinyinX,pinyinY);
 	}
 
 	/*@Inject(method = "drawTextBox", at = @At("RETURN"))
