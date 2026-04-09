@@ -28,7 +28,7 @@ public class OptionPage {
 		OptionsCategory generalCat = new OptionsCategory("options.betterthanime.category.general");
 		generalCat.
 			withComponent(new BooleanOptionComponent(modSettings.btime$EnableCommandMode()))
-			.withComponent(new BooleanOptionComponent(modSettings.btime$mixinFullScreen()))
+			//.withComponent(new BooleanOptionComponent(modSettings.btime$mixinFullScreen()))
 		;
 
 		// 2. StoreMode 按钮（带实时刷新逻辑）

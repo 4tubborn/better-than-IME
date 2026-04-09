@@ -152,7 +152,7 @@ public class IMEUtil {
 	}
 
 	public static void updateInputCandidatePos(int x, int y) {
-		//int rx = x
+		int ry= y + 5;
 		if (mcHwnd == null) return;
 
 		try {
@@ -164,7 +164,7 @@ public class IMEUtil {
 				Imm32.COMPOSITIONFORM form = new Imm32.COMPOSITIONFORM();
 				form.dwStyle = 0x0002; // CFS_POINT
 				form.ptCurrentPos.x = (int) (x * scale);
-				form.ptCurrentPos.y = (int) (y * scale);
+				form.ptCurrentPos.y = (int) (ry * scale);
 
 				Imm32.INSTANCE.ImmSetCompositionWindow(hIMC, form);
 				Imm32.INSTANCE.ImmReleaseContext(mcHwnd, hIMC);
@@ -180,7 +180,7 @@ public class IMEUtil {
 		return true;
 	}
 
-	public static void setWindowOnTop(){
+	/*public static void setWindowOnTop(){
 		//若未启用mixin全屏则不处理
 		if(!isMixinFullScreenEnabled()) return;
 
@@ -197,5 +197,5 @@ public class IMEUtil {
 			// 只要失去焦点（比如你点开录屏按钮），立刻释放层级，让其他窗口能出来
 			GLFW.glfwSetWindowAttrib(IMEUtil.glfwHand, GLFW.GLFW_FLOATING, GLFW.GLFW_FALSE);
 		}
-	}
+	}*/
 }
