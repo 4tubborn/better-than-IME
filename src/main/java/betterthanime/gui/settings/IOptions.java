@@ -10,4 +10,5 @@ public interface IOptions {
 	// 新增黑名单字符串选项 (用于存储以逗号分隔的命令)
 	OptionBoolean btime$BlacklistCommandMode();
 	OptionBoolean btime$autoAdsorb();
+	OptionBoolean btime$mixinFullScreen();
 }

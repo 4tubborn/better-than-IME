@@ -1,23 +1,24 @@
 package betterthanime.util;
 
 import com.sun.jna.Pointer;
-import com.sun.jna.platform.win32.User32;
-import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import net.minecraft.client.Minecraft;
 import betterthanime.gui.settings.EStoreMode;
 import betterthanime.gui.settings.IOptions;
 
 import net.minecraft.core.enums.EnumOS;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWNativeWin32;
-import org.spongepowered.asm.mixin.Unique;
 
 public class IMEUtil {
 	public static boolean enableIME = false;
 	public static boolean lastUserPreference = true;
 
 	private static HWND mcHwnd = null;
+	public static long glfwHand = -1;
 
+	// 缓存 mc 实例
+	public static Minecraft mc = null;
 	// --- 逻辑实现部分 ---
 
 	public static void initialize(){
@@ -31,8 +32,13 @@ public class IMEUtil {
 	}
 
 	public static void clientInitialize(){
+
+		// 初始化时只获取一次
+		mc = Minecraft.getMinecraft();
 		// 1. 获取 GLFW 原始句柄
 		long glfwHandle = Minecraft.getMinecraft().gameWindow.getHandle();
+
+		glfwHand = glfwHandle;
 
 		// 2. 关键步骤：调用 LWJGL 提供的原生方法，把 GLFW 指针转成真正的 Win32 HWND
 		long hwndVal = GLFWNativeWin32.glfwGetWin32Window(glfwHandle);
@@ -48,7 +54,7 @@ public class IMEUtil {
 		try {
 			// 1. 直接用缓存的句柄，不再 new，也不再调用 GetForegroundWindow
 			if (mcHwnd == null) {
-				Minecraft mc = Minecraft.getMinecraft();
+				//Minecraft mc = Minecraft.getMinecraft();
 				if (mc != null && mc.gameWindow != null) {
 					// 如果此时窗口已经创建了，就地初始化
 					clientInitialize();
@@ -145,25 +151,14 @@ public class IMEUtil {
 		return EStoreMode.NEVER;
 	}
 
-	public static void ensureSafeWindowMode() {
-		/*Minecraft mc = Minecraft.getMinecraft();
-		long handle = mc.gameWindow.getHandle();
-		boolean isPhysicallyFullscreen = org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(handle) != 0L;
-
-		if (isPhysicallyFullscreen || mc.gameSettings.fullscreen.value) {
-			mc.gameWindow.toggleFullscreen();
-			mc.gameSettings.fullscreen.value = false;
-			org.lwjgl.glfw.GLFW.glfwPollEvents();
-		}*/
-	}
-
 	public static void updateInputCandidatePos(int x, int y) {
+		//int rx = x
 		if (mcHwnd == null) return;
 
 		try {
 			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(mcHwnd);
 			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
-				Minecraft mc = Minecraft.getMinecraft();
+				//Minecraft mc = Minecraft.getMinecraft();
 				double scale = mc.resolution.getScale();
 
 				Imm32.COMPOSITIONFORM form = new Imm32.COMPOSITIONFORM();
@@ -175,5 +170,32 @@ public class IMEUtil {
 				Imm32.INSTANCE.ImmReleaseContext(mcHwnd, hIMC);
 			}
 		} catch (Throwable ignored) {}
+	}
+
+	private static boolean isMixinFullScreenEnabled() {
+		//Minecraft mc = Minecraft.getMinecraft();
+		if (mc.gameSettings instanceof IOptions) {
+			return ((IOptions) mc.gameSettings).btime$mixinFullScreen().value;
+		}
+		return true;
+	}
+
+	public static void setWindowOnTop(){
+		//若未启用mixin全屏则不处理
+		if(!isMixinFullScreenEnabled()) return;
+
+		//Minecraft mc = Minecraft.getMinecraft();
+		boolean isFullscreen = mc.gameSettings.fullscreen.value;
+		boolean patchEnabled = isMixinFullScreenEnabled();
+
+		// --- 动态置顶修复逻辑 ---
+
+			// 只有当游戏窗口获得焦点时，才开启置顶盖住任务栏
+		if (patchEnabled && isFullscreen && mc.gameWindow.isFocused()) {
+			GLFW.glfwSetWindowAttrib(IMEUtil.glfwHand, GLFW.GLFW_FLOATING, GLFW.GLFW_TRUE);
+		} else {
+			// 只要失去焦点（比如你点开录屏按钮），立刻释放层级，让其他窗口能出来
+			GLFW.glfwSetWindowAttrib(IMEUtil.glfwHand, GLFW.GLFW_FLOATING, GLFW.GLFW_FALSE);
+		}
 	}
 }

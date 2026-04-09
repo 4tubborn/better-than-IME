@@ -3,6 +3,7 @@ package betterthanime.mixin;
 import betterthanime.util.IMEUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Screen;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,16 +31,20 @@ public class MixinMinecraft {
 
 	@Inject(method = "runTick", at = @At("HEAD"))
 	private void onTick(CallbackInfo ci) {
-
+		//全屏窗口置顶的处理
+		//IMEUtil.setWindowOnTop();
 		// 如果已经在输入模式（enableIME 为 true），直接跳过强制关闭逻辑
 		//if (IMEUtil.syncLock) return;
-
+		//IMEUtil.switchToBorderless();
 		//IMEUtil.ensureSafeWindowMode();
 		if (IMEUtil.enableIME) return;
 
 		// 只有在确定没有输入框聚焦时，才执行物理同步关闭
 		IMEUtil.sync(false);
 	}
+
+
+
 	@Inject(method = "displayScreen", at = @At("HEAD"))
 	private void on(Screen screen, CallbackInfo ci) {
 		// 每当切换界面（哪怕是从设置页A跳到设置页B），都先关闭输入法锁

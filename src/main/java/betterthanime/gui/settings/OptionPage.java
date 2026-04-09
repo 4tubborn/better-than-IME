@@ -26,7 +26,10 @@ public class OptionPage {
 
 		// 1. 基础设置分类
 		OptionsCategory generalCat = new OptionsCategory("options.betterthanime.category.general");
-		generalCat.withComponent(new BooleanOptionComponent(modSettings.btime$EnableCommandMode()));
+		generalCat.
+			withComponent(new BooleanOptionComponent(modSettings.btime$EnableCommandMode()))
+			.withComponent(new BooleanOptionComponent(modSettings.btime$mixinFullScreen()))
+		;
 
 		// 2. StoreMode 按钮（带实时刷新逻辑）
 		ToggleableOptionComponent<EStoreMode> storeModeBtn = new ToggleableOptionComponent<EStoreMode>(modSettings.btime$StoreMode()) {
@@ -69,9 +72,11 @@ public class OptionPage {
 		}
 
 		// 4. 固定分类：指示器
-		btimeOptions.withComponent(new OptionsCategory("options.betterthanime.category.imeStatusIndicator")
-			.withComponent(new BooleanOptionComponent(modSettings.btime$autoAdsorb()))
-		);
+		btimeOptions
+			.withComponent(new OptionsCategory("options.betterthanime.category.imeStatusIndicator")
+				.withComponent(new BooleanOptionComponent(modSettings.btime$autoAdsorb()))
+			)
+		;
 	}
 
 	public static void register() {

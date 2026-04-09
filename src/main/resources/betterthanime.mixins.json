@@ -8,7 +8,7 @@
   "mixins": [
   ],
   "client": [
-    "MixinFullScreen",
+
     "MixinMinecraft",
     "MixinScreen",
     "MixinScreenChat",
