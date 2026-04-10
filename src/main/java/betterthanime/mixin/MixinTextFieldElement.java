@@ -1,6 +1,7 @@
 package betterthanime.mixin;
 
 import betterthanime.gui.IMEStatusComponent;
+import betterthanime.gui.settings.IOptions;
 import betterthanime.util.IMEUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.TextFieldElement;
@@ -78,10 +79,6 @@ public class MixinTextFieldElement {
 
 			IMEStatusComponent.INSTANCE.setStickerPosition(this.xPosition, this.yPosition - IMEStatusComponent.INSTANCE.getYSize(mc) - IMEStatusComponent.padding);
 		}
-		if (this.isFocused){
-			//System.out.println("[btime] nothing");
-		}
-		//System.out.println("[btime] nothing");
 	}
 
 	@Redirect(
@@ -152,22 +149,23 @@ public class MixinTextFieldElement {
 			if (pinyinX < this.xPosition + 4) return;
 		}
 
-		// --- 4. 开始渲染 ---
-		int compColor = 0xFF55FF55; // 浅绿色
-		this.font.drawString(pinyin, pinyinX, pinyinY, compColor);
+		if(((IOptions) mc.gameSettings).btime$renderPinyin().value) {// --- 4. 开始渲染 ---
+			int compColor = 0xFF55FF55; // 浅绿色
+			this.font.drawString(pinyin, pinyinX, pinyinY, compColor);
 
-		// 下划线
-		((net.minecraft.client.gui.Gui)(Object)this).drawRect(
-			pinyinX,
-			pinyinY + 9,
-			pinyinX + this.font.getStringWidth(pinyin),
-			pinyinY + 10,
-			compColor
-		);
-		if ((this.cursorCounter / 6) % 2 == 0) {
-			// 画那个会闪烁的虚拟光标 "_"
-			// 颜色 14737632 是原版常用的灰白色 (0xE0E0E0)
-			this.font.drawString("_", pinyinX + this.font.getStringWidth(pinyin), pinyinY, 14737632);
+			// 下划线
+			((net.minecraft.client.gui.Gui) (Object) this).drawRect(
+				pinyinX,
+				pinyinY + 9,
+				pinyinX + this.font.getStringWidth(pinyin),
+				pinyinY + 10,
+				compColor
+			);
+			if ((this.cursorCounter / 6) % 2 == 0) {
+				// 画那个会闪烁的虚拟光标 "_"
+				// 颜色 14737632 是原版常用的灰白色 (0xE0E0E0)
+				this.font.drawString("_", pinyinX + this.font.getStringWidth(pinyin), pinyinY, 14737632);
+			}
 		}
 
 		IMEUtil.updateInputCandidatePos(pinyinX,pinyinY);

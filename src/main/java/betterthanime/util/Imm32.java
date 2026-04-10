@@ -29,7 +29,9 @@ public interface Imm32 extends StdCallLibrary {
 	// 拼音字符串获取
 	int ImmGetCompositionStringW(Pointer hIMC, int dwIndex, byte[] lpBuf, int dwBufLen);
 
-	// 结构体定义：COMPOSITIONFORM
+    void ImmSetCompositionFontW(Pointer hIMC, LOGFONT lf);
+
+    // 结构体定义：COMPOSITIONFORM
 	public static class COMPOSITIONFORM extends Structure {
 		public int dwStyle;
 		public POINT ptCurrentPos;
@@ -53,4 +55,37 @@ public interface Imm32 extends StdCallLibrary {
 
 	// 设置候选框位置
 	boolean ImmSetCompositionWindow(Pointer hIMC, COMPOSITIONFORM lpCompForm);
+
+	public static class LOGFONT extends Structure {
+		public int lfHeight;
+		public int lfWidth;
+		public int lfEscapement;
+		public int lfOrientation;
+		public int lfWeight;
+		public byte lfItalic;
+		public byte lfUnderline;
+		public byte lfStrikeOut;
+		public byte lfCharSet;
+		public byte lfOutPrecision;
+		public byte lfClipPrecision;
+		public byte lfQuality;
+		public byte lfPitchAndFamily;
+		public char[] lfFaceName = new char[32];  // LF_FACESIZE = 32
+
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList(
+				"lfHeight", "lfWidth", "lfEscapement", "lfOrientation",
+				"lfWeight", "lfItalic", "lfUnderline", "lfStrikeOut",
+				"lfCharSet", "lfOutPrecision", "lfClipPrecision",
+				"lfQuality", "lfPitchAndFamily", "lfFaceName"
+			);
+		}
+	}
+
+}
+
+interface Kernel32Extra extends StdCallLibrary {
+	Kernel32Extra INSTANCE = Native.load("kernel32", Kernel32Extra.class);
+	boolean IsDebuggerPresent();
 }

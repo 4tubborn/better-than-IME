@@ -8,18 +8,18 @@
   "mixins": [
   ],
   "client": [
-
+    "MixinFullScreen",
     "MixinMinecraft",
     "MixinScreen",
     "MixinScreenChat",
+    "MixinScreenOptions",
     "MixinScreenSignEditor",
+    "MixinSearchFieldComponent",
     "MixinTextFieldElement",
     "MixinTextFieldWidget",
     "accessors.OptionsPageAccessor",
     "guidebook.MixinScreenGuidebook",
     "interfaces.MixinGameSettings",
-    "MixinScreenOptions",
-    "MixinSearchFieldComponent",
     "render.MixinHudComponent",
     "render.MixinScreen"
   ]

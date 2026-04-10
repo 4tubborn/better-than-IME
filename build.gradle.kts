@@ -77,7 +77,7 @@ dependencies {
 	include("net.java.dev.jna:jna:$jnaVersion")
 	include("net.java.dev.jna:jna-platform:$jnaVersion")
 	//modmenu
-	implementation("com.github.Turnip-Labs:ModMenu:4.0.0")
+	//implementation("com.github.Turnip-Labs:ModMenu:4.0.0")
 }
 java {
 	toolchain {

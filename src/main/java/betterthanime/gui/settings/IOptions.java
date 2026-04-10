@@ -8,7 +8,8 @@ public interface IOptions {
 
 	OptionEnum<EStoreMode> btime$StoreMode();
 	// 新增黑名单字符串选项 (用于存储以逗号分隔的命令)
-	OptionBoolean btime$BlacklistCommandMode();
+	OptionBoolean btime$blacklistCommandMode();
 	OptionBoolean btime$autoAdsorb();
 	OptionBoolean btime$mixinFullScreen();
+	OptionBoolean btime$renderPinyin();
 }

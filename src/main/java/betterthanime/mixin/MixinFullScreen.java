@@ -16,7 +16,7 @@ public abstract class MixinFullScreen {
 
 
 
-	/*@Unique
+	@Unique
 	private boolean isPatchEnabled() {
 		Minecraft mc = Minecraft.getMinecraft();
 		if (mc.gameSettings instanceof IOptions) {
@@ -37,7 +37,7 @@ public abstract class MixinFullScreen {
 		}
 	}
 
-	// 2. 拦截最终的坐标设置 (这是解决你“300偏移无效”的关键)
+	 //2. 拦截最终的坐标设置 (这是解决你“300偏移无效”的关键)
 	/*@Redirect(method = "updateWindowState",
 		at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSetWindowPos(JII)V"))
 	private void redirectSetWindowPos(long window, int x, int y) {
@@ -58,7 +58,7 @@ public abstract class MixinFullScreen {
 			GLFW.glfwSetWindowAttrib(window, GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
 			GLFW.glfwSetWindowPos(window, x, y);
 		}
-	}
+	}*/
 	@Redirect(method = "updateWindowState",
 		at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSetWindowPos(JII)V"))
 	private void redirectSetWindowPos(long window, int x, int y) {
@@ -100,5 +100,5 @@ public abstract class MixinFullScreen {
 		} else {
 			GLFW.glfwSetWindowSize(window, width, height);
 		}
-	}*/
+	}
 }

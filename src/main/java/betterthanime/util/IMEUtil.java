@@ -1,12 +1,16 @@
 package betterthanime.util;
 
 import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HWND;
+import com.sun.jna.platform.win32.WinUser;
 import net.minecraft.client.Minecraft;
 import betterthanime.gui.settings.EStoreMode;
 import betterthanime.gui.settings.IOptions;
 
 import net.minecraft.core.enums.EnumOS;
+import org.lwjgl.Sys;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWNativeWin32;
 
@@ -47,6 +51,20 @@ public class IMEUtil {
 		mcHwnd = new HWND(new Pointer(hwndVal));
 
 		System.out.println("[btime] 真正的 Win32 句柄已锁定: " + mcHwnd);
+
+		System.out.println("[btime] IsDebuggerPresent: " + Kernel32Extra.INSTANCE.IsDebuggerPresent());
+		System.out.println("[btime] Parent HWND: " + User32.INSTANCE.GetParent(mcHwnd));
+		System.out.println("[btime] PID: "+Kernel32.INSTANCE.GetCurrentProcessId());
+
+		int style = User32.INSTANCE.GetWindowLong(mcHwnd, WinUser.GWL_EXSTYLE);
+		System.out.println("[btime] Extended Style: " + Integer.toHexString(style));
+
+		Pointer wndProc = User32.INSTANCE.GetWindowLongPtr(mcHwnd, WinUser.GWL_WNDPROC).toPointer();
+		System.out.println("[btime] WindowProc: " + wndProc);
+
+		System.out.println("[btime] CommandLine: " + System.getProperty("sun.java.command"));
+		System.out.println("[btime] Java Class Path: " + System.getProperty("java.class.path"));
+		System.out.println("[btime] IDEA flag: " + System.getProperty("idea.test"));
 	}
 
 
@@ -152,21 +170,32 @@ public class IMEUtil {
 	}
 
 	public static void updateInputCandidatePos(int x, int y) {
-		int ry= y + 5;
 		if (mcHwnd == null) return;
-
 		try {
 			Pointer hIMC = Imm32.INSTANCE.ImmGetContext(mcHwnd);
 			if (hIMC != null && Pointer.nativeValue(hIMC) != 0) {
-				//Minecraft mc = Minecraft.getMinecraft();
 				double scale = mc.resolution.getScale();
 
+				// 1. 设置位置
 				Imm32.COMPOSITIONFORM form = new Imm32.COMPOSITIONFORM();
 				form.dwStyle = 0x0002; // CFS_POINT
 				form.ptCurrentPos.x = (int) (x * scale);
-				form.ptCurrentPos.y = (int) (ry * scale);
-
+				form.ptCurrentPos.y = (int) (y * scale) - 5;
 				Imm32.INSTANCE.ImmSetCompositionWindow(hIMC, form);
+
+				// 2. 设置字体（新增）
+				Imm32.LOGFONT lf = new Imm32.LOGFONT();
+				lf.lfHeight = (int) (12 * scale);                 // 字号，像素
+				lf.lfWidth = 0;
+				lf.lfWeight = 400;                // 正常粗细
+				lf.lfCharSet = (byte) 134;        // GB2312_CHARSET
+				// 设置字体名称（必须 '\0' 结尾）
+				String fontName = "Microsoft YaHei\0";
+				for (int i = 0; i < fontName.length() && i < lf.lfFaceName.length; i++) {
+					lf.lfFaceName[i] = fontName.charAt(i);
+				}
+				Imm32.INSTANCE.ImmSetCompositionFontW(hIMC, lf);
+
 				Imm32.INSTANCE.ImmReleaseContext(mcHwnd, hIMC);
 			}
 		} catch (Throwable ignored) {}
@@ -180,7 +209,7 @@ public class IMEUtil {
 		return true;
 	}
 
-	/*public static void setWindowOnTop(){
+	public static void setWindowOnTop(){
 		//若未启用mixin全屏则不处理
 		if(!isMixinFullScreenEnabled()) return;
 
@@ -197,5 +226,5 @@ public class IMEUtil {
 			// 只要失去焦点（比如你点开录屏按钮），立刻释放层级，让其他窗口能出来
 			GLFW.glfwSetWindowAttrib(IMEUtil.glfwHand, GLFW.GLFW_FLOATING, GLFW.GLFW_FALSE);
 		}
-	}*/
+	}
 }

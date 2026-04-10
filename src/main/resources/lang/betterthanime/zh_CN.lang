@@ -14,3 +14,7 @@ options.betterthanime.blacklistCommandMode=命令模式
 
 options.betterthanime.category.imeStatusIndicator=输入法指示器
 options.betterthanime.autoAdsorb=自动吸附
+
+options.betterthanime.category.debug=调试
+options.betterthanime.mixininFullScreen=Mixin 全屏
+options.betterthanime.renderPinyin=渲染拼音

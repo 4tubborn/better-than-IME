@@ -25,6 +25,14 @@ public class MixinGameSettings implements IOptions {
 	public final OptionBoolean autoAdsorb = new OptionBoolean(thisAs, "betterthanime.autoAdsorb", true); // 默认开启
 
 	@Unique
+	public final OptionBoolean renderPinyin = new OptionBoolean(thisAs, "betterthanime.renderPinyin", true); // 默认开启
+
+	@Override
+	public OptionBoolean btime$renderPinyin() {
+		return renderPinyin;
+	}
+
+	@Unique
 	public final OptionBoolean mixinFullScreen = new OptionBoolean(thisAs, "betterthanime.mixininFullScreen", true){
 		@Override
 		public void onUpdate() {
@@ -42,6 +50,7 @@ public class MixinGameSettings implements IOptions {
 	public OptionBoolean btime$mixinFullScreen() {
 		return mixinFullScreen;
 	}
+
 	@Override
 	public OptionBoolean btime$autoAdsorb() {
 		return autoAdsorb;
@@ -50,7 +59,7 @@ public class MixinGameSettings implements IOptions {
 	@Override public OptionEnum<EStoreMode> btime$StoreMode() { return storeMode; }
 
 	@Override
-	public OptionBoolean btime$BlacklistCommandMode() { return  blacklistCommandMode; }
+	public OptionBoolean btime$blacklistCommandMode() { return  blacklistCommandMode; }
 
 
 	@Override

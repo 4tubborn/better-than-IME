@@ -32,7 +32,7 @@ public class MixinMinecraft {
 	@Inject(method = "runTick", at = @At("HEAD"))
 	private void onTick(CallbackInfo ci) {
 		//全屏窗口置顶的处理
-		//IMEUtil.setWindowOnTop();
+		IMEUtil.setWindowOnTop();
 		// 如果已经在输入模式（enableIME 为 true），直接跳过强制关闭逻辑
 		//if (IMEUtil.syncLock) return;
 		//IMEUtil.switchToBorderless();

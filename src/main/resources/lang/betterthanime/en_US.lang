@@ -14,3 +14,7 @@ options.betterthanime.blacklistCommandMode=Command Mode
 
 options.betterthanime.category.imeStatusIndicator=IME Status Indicator
 options.betterthanime.autoAdsorb=Auto Adsorb
+
+options.betterthanime.category.debug=Debug
+options.betterthanime.mixininFullScreen=Mixin Full Screen
+options.betterthanime.renderPinyin=Render Pinyin

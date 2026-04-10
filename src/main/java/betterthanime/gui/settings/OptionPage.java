@@ -28,7 +28,7 @@ public class OptionPage {
 		OptionsCategory generalCat = new OptionsCategory("options.betterthanime.category.general");
 		generalCat.
 			withComponent(new BooleanOptionComponent(modSettings.btime$EnableCommandMode()))
-			//.withComponent(new BooleanOptionComponent(modSettings.btime$mixinFullScreen()))
+
 		;
 
 		// 2. StoreMode 按钮（带实时刷新逻辑）
@@ -67,7 +67,7 @@ public class OptionPage {
 		// 3. 动态分类：黑名单
 		if (modSettings.btime$StoreMode().value == EStoreMode.BLACKLIST) {
 			OptionsCategory blacklistCat = new OptionsCategory("options.betterthanime.category.blacklist");
-			blacklistCat.withComponent(new BooleanOptionComponent(modSettings.btime$BlacklistCommandMode()));
+			blacklistCat.withComponent(new BooleanOptionComponent(modSettings.btime$blacklistCommandMode()));
 			btimeOptions.withComponent(blacklistCat);
 		}
 
@@ -75,6 +75,10 @@ public class OptionPage {
 		btimeOptions
 			.withComponent(new OptionsCategory("options.betterthanime.category.imeStatusIndicator")
 				.withComponent(new BooleanOptionComponent(modSettings.btime$autoAdsorb()))
+			)
+			.withComponent(new OptionsCategory("options.betterthanime.category.debug")
+				.withComponent(new BooleanOptionComponent(modSettings.btime$mixinFullScreen()))
+				.withComponent(new BooleanOptionComponent(modSettings.btime$renderPinyin()))
 			)
 		;
 	}

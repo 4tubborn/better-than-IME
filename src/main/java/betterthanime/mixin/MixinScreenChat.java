@@ -64,21 +64,23 @@ public abstract class MixinScreenChat extends Screen {
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/chat/ScreenChat;drawString(Lnet/minecraft/client/render/Font;Ljava/lang/String;III)V", ordinal = 0, shift = At.Shift.AFTER)
 	)
 	private void injectPinyinIntoChat(int mx, int my, float partialTick, CallbackInfo ci) {
+
 		if (!this.isRenderingPinyin) return;
 
 		String pinyin = IMEUtil.getCompositionString();
 		int x = 18 + this.font.getStringWidth(this.message);
 		int y = this.height - 12;
+		if(((IOptions) mc.gameSettings).btime$renderPinyin().value) {
+			// --- 这里是拼音，每一帧都会执行，不再闪烁 ---
+			int compColor = 0xFF55FF55;
+			this.drawString(this.font, pinyin, x, y, compColor);
+			this.drawRect(x, y + 9, x + this.font.getStringWidth(pinyin), y + 10, compColor);
 
-		// --- 这里是拼音，每一帧都会执行，不再闪烁 ---
-		int compColor = 0xFF55FF55;
-		this.drawString(this.font, pinyin, x, y, compColor);
-		this.drawRect(x, y + 9, x + this.font.getStringWidth(pinyin), y + 10, compColor);
-
-		// --- 这里是你的“虚拟光标”，手动控制它闪烁 ---
-		if (this.updateCounter / 6 % 2 == 0) {
-			int cursorX = x + this.font.getStringWidth(pinyin);
-			this.drawString(this.font, "_", cursorX, y, 14737632);
+			// --- 这里是你的“虚拟光标”，手动控制它闪烁 ---
+			if (this.updateCounter / 6 % 2 == 0) {
+				int cursorX = x + this.font.getStringWidth(pinyin);
+				this.drawString(this.font, "_", cursorX, y, 14737632);
+			}
 		}
 
 		IMEUtil.updateInputCandidatePos(x,y);
@@ -119,7 +121,7 @@ public abstract class MixinScreenChat extends Screen {
 	@Unique
 	private boolean isBlacklistCommandModeEnabled() {
 		if (mc.gameSettings instanceof IOptions) {
-			return (StoreMode() == EStoreMode.BLACKLIST && ((IOptions) mc.gameSettings).btime$BlacklistCommandMode().value);
+			return (StoreMode() == EStoreMode.BLACKLIST && ((IOptions) mc.gameSettings).btime$blacklistCommandMode().value);
 		}
 		return true; // 默认开启
 	}
